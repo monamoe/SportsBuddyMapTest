@@ -1,29 +1,21 @@
 package test.helloteam.helloteammaptest
 
-import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.LocationManager
+import android.location.Location
 import android.os.Bundle
-import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.*
-import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.Task
-import android.Manifest;
-import android.content.Context;
-import android.location.Location;
-import android.provider.Settings;
-import androidx.annotation.NonNull;
-import java.util.concurrent.TimeUnit
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -32,7 +24,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     //permission integer
     private val MY_PERMISSION_FINE_LOCATION: Int = 44
-
 
     //for users location
     // FusedLocationProviderClient - Main class for receiving location updates.
@@ -50,39 +41,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 // last location to create a Notification if the user navigates away from the app.
     private var currentLocation: Location? = null
 
+    //default user location values
     var userLocationLon = 0.1;
     var userLocationLat = 0.1;
 
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //map shit
+        //setting layout
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
-                .findFragmentById(R.id.map) as SupportMapFragment
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        //getting user location
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-
-        if ( ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            fusedLocationProviderClient!!.lastLocation.addOnSuccessListener {
-                //program has permission
-                location->
-                if(location != null){
-                    //update user interface
-
-                }
-            }
-        }
-        else{
-            requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), MY_PERMISSION_FINE_LOCATION)
-        }
-
         //idk
-        //for timing
+        //for timing, refreshing user location, probs wont use this plus its confusing
 //        locationRequest = LocationRequest().apply {
 //            // Sets the desired interval for active location updates. This interval is inexact. You
 //            // may not receive updates at all if no location sources are available, or you may
@@ -106,6 +81,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 //            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
 //        }
 
+        //creating markers on map
+        Log.i("LOG_TAG","HAHA: Map Setup Ready")
+//        setupMap(mMap);
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray){
@@ -124,30 +102,83 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Manipulates the map once available
+     * map on ready
      */
     override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
+        //getting user location
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        if ( ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            fusedLocationProviderClient!!.lastLocation.addOnSuccessListener {
+                //program has permission
+                location->
+                if(location != null){
+                    //update user interface
+                    userLocationLat = location.latitude
+                    userLocationLon = location.longitude
 
-        //adding markers
-        //find a way to customize the marker icon
+                    val userlocation = LatLng(userLocationLat, userLocationLon)
 
-        val userlocation = LatLng(userLocationLon, userLocationLat)
-        val toronto = LatLng(43.6532, 79.3832)
-        val mississauga = LatLng(79.6441, 43.6532)
+                    mMap = googleMap
+                    //adding markers
+                    val toronto = LatLng(43.6532, -79.3832)
+                    val mississauga = LatLng(43.6532, -79.6441)
+                    //find a way to customize the marker icon
 
-        val sydney = LatLng(-34.0, 151.0)
+                    //user location marker
 
-        mMap.addMarker(MarkerOptions().position(toronto).title("Toronto"))
-        mMap.addMarker(MarkerOptions().position(sydney).title("Sydney"))
-        mMap.addMarker(MarkerOptions().position(mississauga).title("Mississauga"))
+                    mMap.addMarker(MarkerOptions().position(toronto).title("Toronto"))
+                    mMap.addMarker(MarkerOptions().position(mississauga).title("Mississauga"))
+
+                    mMap.addMarker(MarkerOptions().position(userlocation).title(userLocationLon.toString() + ", " + userLocationLat.toString()))
 
 
-        mMap.addMarker(MarkerOptions().position(userlocation).title("User Location"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    Log.i("LOG_TAG", "HAHA Users Location Lat: " + userLocationLat.toString() + ", Lon: " + userLocationLon.toString())
+                    //checking accuracy
+                    // idk why we need this, yet
+                    if (location.hasAccuracy()){
+                        // setting value to  variable = location.accuracy();
+                        //
+                        // https://www.youtube.com/watch?v=DPKtC2HA9sE
+                    }
+                }
+            }
+        }
+        //request permission
+        else{
+            requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), MY_PERMISSION_FINE_LOCATION)
+        }
+
+
+
+        Log.i("LOG_TAG","Map Ready")
+
+
+
+
+
+
     }
 
+    //initilize map
+    // mMap is the private global variable for the scope
+    fun setupMap(googleMap: GoogleMap)
+    {
 
-
+    }
 
 
 }
